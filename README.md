@@ -54,6 +54,77 @@ kill <PID>
 lsof -i:8080 | grep LISTEN | awk '{print $2}' | xargs kill
 ```
 
+## Jenkins流水线配置
+
+本项目已包含Jenkinsfile，用于配置CI/CD流水线，实现从GitHub拉取代码、Maven打包、构建Docker镜像并推送到私人仓库的自动化流程。
+
+### 前置条件
+1. 已安装Jenkins服务器
+2. Jenkins已安装必要插件：Git、Pipeline、Docker Pipeline
+3. 已在GitHub上创建并推送项目代码
+4. 已准备好Docker私人仓库
+
+### Jenkins配置步骤
+
+#### 1. 配置凭证
+1. 登录Jenkins管理界面
+2. 点击"凭据管理" > "系统" > "全局凭据" > "添加凭据"
+3. 添加GitHub凭据（用于拉取代码）：
+   - 类型：Username with password或SSH Username with private key
+   - ID：设置为`github-credentials`（与Jenkinsfile中保持一致）
+   - 填写GitHub用户名和访问令牌（或SSH私钥）
+4. 添加Docker仓库凭据（用于推送镜像）：
+   - 类型：Username with password
+   - ID：设置为`registry`（与Jenkinsfile中保持一致）
+   - 填写Docker仓库用户名和密码
+
+#### 2. 准备Docker环境
+确保Jenkins服务器上已安装Docker，并且Jenkins用户有权限访问Docker。
+
+```bash
+# 将Jenkins用户添加到docker组
+sudo usermod -aG docker jenkins
+# 重启Jenkins
+sudo systemctl restart jenkins
+```
+
+#### 3. 修改Jenkinsfile（可选）
+Jenkinsfile已配置为：
+- `GITHUB_REPO`：`papermooth/java-be`
+- `DOCKER_REGISTRY`：`192.168.13.244:5000`
+- 仓库URL：`git@github.com:papermooth/java-be.git`（SSH方式）
+- `branches: [[name: '*/master']]`：根据实际默认分支调整（可能是main）
+
+#### 4. 创建Jenkins流水线任务
+1. 在Jenkins首页点击"新建任务"
+2. 输入任务名称，选择"流水线"，点击确定
+3. 在配置页面，找到"流水线"部分
+4. 选择"Pipeline script from SCM"
+5. SCM选择"Git"
+6. 填写仓库URL：`git@github.com:papermooth/java-be.git`
+7. 选择之前配置的GitHub凭据
+8. 指定分支（如`*/master`或`*/main`）
+9. 脚本路径保持为`Jenkinsfile`
+10. 点击"保存"
+
+#### 5. 运行流水线
+1. 在任务页面点击"立即构建"
+2. 查看构建日志，监控流水线执行状态
+3. 成功后，可以在Docker私人仓库中查看推送的镜像
+
+### 流水线各阶段说明
+1. **拉取代码**：从GitHub仓库拉取最新代码
+2. **Maven打包**：使用Maven构建项目，生成JAR文件
+3. **构建Docker镜像**：基于生成的JAR文件创建Docker镜像
+4. **推送Docker镜像**：将镜像推送到配置的私人仓库，并添加latest标签
+5. **清理**：删除本地构建的Docker镜像，释放空间
+
+### 常见问题处理
+1. **Docker权限问题**：确保Jenkins用户加入了docker组并重启Jenkins服务
+2. **凭据错误**：检查Jenkins中配置的凭据ID是否与Jenkinsfile中一致
+3. **网络连接问题**：确保Jenkins服务器可以访问GitHub和Docker仓库
+4. **构建失败**：查看详细构建日志，定位具体错误原因
+
 ### 6. 访问系统
 应用启动后，可以通过以下方式访问：
 - 登录页面：http://localhost:8080/
