@@ -114,11 +114,12 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
             steps {
                 // 检查Docker命令是否可用
                 sh '''
-                    if ! command -v docker &> /dev/null; then
+                    if ! command -v docker >/dev/null 2>&1; then
                         echo "警告: Docker命令不可用，跳过清理步骤！"
                         echo "请确认Jenkins中的Docker工具配置正确。"
                         exit 0
                     fi
+                    echo "Docker命令可用，路径: $(command -v docker)"
                     // 清理本地Docker镜像
                     echo "清理本地Docker镜像..."
                     docker rmi ${DOCKER_FULL_IMAGE_NAME} || true
