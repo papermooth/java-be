@@ -30,10 +30,10 @@ pipeline {
         
         stage('Maven打包') {
             steps {
-                // 使用Maven打包项目
+                // 使用Maven Docker镜像打包项目
                 sh '''
                     echo "开始Maven打包..."
-                    mvn clean package -DskipTests
+                    docker run --rm -v "${PWD}:/usr/src/mymaven" -w /usr/src/mymaven maven:3.9.9-eclipse-temurin-17-noble  mvn clean package -DskipTests
                 '''
             }
         }
