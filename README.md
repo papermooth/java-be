@@ -40,6 +40,20 @@ mvn clean package -DskipTests
 java -jar target/library-management-system-1.0.0.jar
 ```
 
+### 6. 停止应用
+如果应用在前台运行，可以使用以下方法停止：
+- 在运行应用的终端中，按 `Ctrl + C` 组合键
+
+如果应用在后台运行，可以使用以下命令停止：
+```bash
+# 查找应用进程ID
+lsof -i:8080 | grep LISTEN | awk '{print $2}'
+# 终止进程（将 <PID> 替换为实际的进程ID）
+kill <PID>
+# 或者使用一步命令
+lsof -i:8080 | grep LISTEN | awk '{print $2}' | xargs kill
+```
+
 ### 6. 访问系统
 应用启动后，可以通过以下方式访问：
 - 登录页面：http://localhost:8080/
