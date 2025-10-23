@@ -1,13 +1,18 @@
 pipeline {
     agent any
     
+    tools {
+        // 使用在Jenkins中配置的Docker工具
+        docker 'docker'
+    }
+    
     environment {
         // 定义环境变量
-        GITHUB_REPO = 'papermooth/java-be'
-        DOCKER_REGISTRY = '192.168.13.244:5000'
-        DOCKER_IMAGE_NAME = 'library-management-system'
-        DOCKER_IMAGE_TAG = "${env.BUILD_NUMBER}"
-        DOCKER_FULL_IMAGE_NAME = "${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+        GITHUB_REPO = 'papermooth/java-be'  // GitHub仓库名
+        DOCKER_REGISTRY = '192.168.13.244:5000'  // Docker私有仓库地址
+        DOCKER_IMAGE_NAME = 'library-management-system'  // Docker镜像名称
+        DOCKER_IMAGE_TAG = "${env.BUILD_NUMBER}"  // 使用Jenkins构建号作为镜像标签
+        DOCKER_FULL_IMAGE_NAME = "${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"  // 完整镜像名称
     }
     
     stages {
@@ -33,13 +38,28 @@ pipeline {
                 // 使用Maven Docker镜像打包项目
                 sh '''
                     echo "开始Maven打包..."
-                    docker run --rm -v "${PWD}:/usr/src/mymaven" -w /usr/src/mymaven maven:3.9.9-eclipse-temurin-17-noble  mvn clean package -DskipTests
+                    # 检查Docker命令是否可用
+                    if ! command -v docker &> /dev/null; then
+                        echo "错误: Docker命令不可用！"
+                        echo "请确认Jenkins中的Docker工具配置正确。"
+                        exit 1
+                    fi
+                    echo "使用Docker运行Maven构建..."
+                    docker run --rm -v "${PWD}:/usr/src/mymaven" -w /usr/src/mymaven maven:3.9.9-eclipse-temurin-17-noble mvn clean package -DskipTests
                 '''
             }
         }
         
         stage('构建Docker镜像') {
             steps {
+                // 检查Docker命令是否可用
+                sh '''
+                    if ! command -v docker &> /dev/null; then
+                        echo "错误: Docker命令不可用！"
+                        echo "请确认Jenkins中的Docker工具配置正确。"
+                        exit 1
+                    fi
+                '''
                 // 创建Dockerfile（如果不存在）
                 script {
                     if (!fileExists('Dockerfile')) {
@@ -63,6 +83,14 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
         
         stage('推送Docker镜像') {
             steps {
+                // 检查Docker命令是否可用
+                sh '''
+                    if ! command -v docker &> /dev/null; then
+                        echo "错误: Docker命令不可用！"
+                        echo "请确认Jenkins中的Docker工具配置正确。"
+                        exit 1
+                    fi
+                '''
                 // 登录到Docker仓库并推送镜像
                 withCredentials([usernamePassword(credentialsId: 'registry', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                     sh '''
@@ -81,8 +109,14 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
         
         stage('清理') {
             steps {
-                // 清理本地Docker镜像
+                // 检查Docker命令是否可用
                 sh '''
+                    if ! command -v docker &> /dev/null; then
+                        echo "警告: Docker命令不可用，跳过清理步骤！"
+                        echo "请确认Jenkins中的Docker工具配置正确。"
+                        exit 0
+                    fi
+                    // 清理本地Docker镜像
                     echo "清理本地Docker镜像..."
                     docker rmi ${DOCKER_FULL_IMAGE_NAME} || true
                     docker rmi ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:latest || true
