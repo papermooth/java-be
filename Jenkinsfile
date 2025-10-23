@@ -39,11 +39,12 @@ pipeline {
                 sh '''
                     echo "开始Maven打包..."
                     # 检查Docker命令是否可用
-                    if ! command -v docker &> /dev/null; then
+                    if ! command -v docker >/dev/null 2>&1; then
                         echo "错误: Docker命令不可用！"
                         echo "请确认Jenkins中的Docker工具配置正确。"
                         exit 1
                     fi
+                    echo "Docker命令可用，路径: $(command -v docker)"
                     echo "使用Docker运行Maven构建..."
                     docker run --rm -v "${PWD}:/usr/src/mymaven" -w /usr/src/mymaven maven:3.9.9-eclipse-temurin-17-noble mvn clean package -DskipTests
                 '''
@@ -54,11 +55,12 @@ pipeline {
             steps {
                 // 检查Docker命令是否可用
                 sh '''
-                    if ! command -v docker &> /dev/null; then
+                    if ! command -v docker >/dev/null 2>&1; then
                         echo "错误: Docker命令不可用！"
                         echo "请确认Jenkins中的Docker工具配置正确。"
                         exit 1
                     fi
+                    echo "Docker命令可用，路径: $(command -v docker)"
                 '''
                 // 创建Dockerfile（如果不存在）
                 script {
@@ -85,11 +87,12 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
             steps {
                 // 检查Docker命令是否可用
                 sh '''
-                    if ! command -v docker &> /dev/null; then
+                    if ! command -v docker >/dev/null 2>&1; then
                         echo "错误: Docker命令不可用！"
                         echo "请确认Jenkins中的Docker工具配置正确。"
                         exit 1
                     fi
+                    echo "Docker命令可用，路径: $(command -v docker)"
                 '''
                 // 登录到Docker仓库并推送镜像
                 withCredentials([usernamePassword(credentialsId: 'registry', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
