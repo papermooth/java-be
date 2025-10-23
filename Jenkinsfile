@@ -26,7 +26,7 @@ pipeline {
                     extensions: [],
                     submoduleCfg: [],
                     userRemoteConfigs: [[
-                        url: "https://github.com/papermooth/java-be.git",
+                        url: "git@github.com:papermooth/java-be.git",
                         credentialsId: 'github-credentials' // Jenkins中配置的GitHub SSH凭证ID
                     ]]
                 ])
