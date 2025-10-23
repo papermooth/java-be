@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.library.mapper.PermissionMapper">
+
+    <select id="findAllPermissions" resultType="com.library.entity.Permission">
+        SELECT * FROM sys_permission WHERE is_deleted = 0 ORDER BY sort ASC
+    </select>
+
+    <select id="findPermissionsByPage" resultType="com.library.entity.Permission">
+        SELECT * FROM sys_permission 
+        WHERE is_deleted = 0
+        <if test="params.keyword != null and params.keyword != ''">
+            AND (name LIKE CONCAT('%', #{params.keyword}, '%') 
+                 OR `key` LIKE CONCAT('%', #{params.keyword}, '%')
+                 OR path LIKE CONCAT('%', #{params.keyword}, '%'))
+        </if>
+        <choose>
+            <when test="params.sortBy != null and params.sortBy != ''">
+                ORDER BY ${params.sortBy} ${params.orderBy}
+            </when>
+            <otherwise>
+                ORDER BY sort ASC, create_time DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="findPermissionsByUserId" parameterType="java.lang.Long" resultType="com.library.entity.Permission">
+        SELECT DISTINCT p.* FROM sys_permission p
+        INNER JOIN sys_role_permission rp ON p.id = rp.permission_id
+        INNER JOIN sys_user_role ur ON rp.role_id = ur.role_id
+        WHERE ur.user_id = #{userId} AND p.is_deleted = 0
+    </select>
+
+    <update id="updatePermission" parameterType="com.library.entity.Permission">
+        UPDATE sys_permission
+        SET name = #{name},
+            `key` = #{key},
+            type = #{type},
+            path = #{path},
+            sort = #{sort},
+            status = #{status},
+            icon = #{icon},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="deletePermission" parameterType="java.lang.Long">
+        UPDATE sys_permission SET is_deleted = 1 WHERE id = #{id}
+    </update>
+
+</mapper>
