@@ -3,7 +3,7 @@ pipeline {
     
     tools {
         // 使用在Jenkins中配置的Docker工具
-        docker 'docker'
+        dockerTool 'docker'
     }
     
     environment {
